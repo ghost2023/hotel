@@ -2,11 +2,21 @@
 #include <string>
 using namespace std;
 
-struct Customer {
+class Customer {
     int idNumber;
     string name;
     char sex;
     int phoneNumber;
+
+   public:
+    Customer() {}
+
+    Customer(int i, string n, char s, int pn) {
+        idNumber = i;
+        name = n;
+        sex = s;
+        phoneNumber = pn;
+    }
 
     void display() {
         cout << "|=======================|\n";
@@ -19,20 +29,71 @@ struct Customer {
     }
 };
 
-struct Reservation {
+class Reservation {
     int reservationDay[3];  // d, m, y
     int receptionistId;
-    struct Customer customer;
+    Customer customer;
+
+   public:
+    Reservation() {}
+    Reservation(int date, int month, int year, int id, Customer c) {
+        reservationDay[0] = date;
+        reservationDay[1] = month;
+        reservationDay[2] = year;
+
+        receptionistId = id;
+        customer = c;
+    }
+
+    Customer getCustomer() {
+        return customer;
+    }
+
+    int getDuration(int date, int month, int year) {
+        return ((year - reservationDay[2]) * 365) + ((month - reservationDay[1]) * 30) + date - reservationDay[0] - 1;
+    }
 };
 
-struct Room {
+class Room {
     int number;
     int floor;
     int tier;
     float price;
     int numberOfBeds;
     bool isReservered;
-    struct Reservation reservation;
+    Reservation reservation;
+
+   public:
+    Room() {}
+    Room(int num, int f, int t, float p, int beds) {
+        number = num;
+        floor = f;
+        tier = t;
+        price = p;
+        numberOfBeds = beds;
+        isReservered = false;
+    }
+
+    void setReservation(Reservation res) {
+        reservation = res;
+        isReservered = true;
+    }
+
+    Reservation getReservation() {
+        return reservation;
+    }
+
+    float getPrice() {
+        return price;
+    }
+
+    bool isRoomReserved() {
+        return isReservered;
+    }
+
+    void clearReservation() {
+        isReservered = false;
+    }
 
     void display() {
         cout << "|=======================|\n";
@@ -47,11 +108,24 @@ struct Room {
     }
 };
 
-struct Receptionist {
+class Receptionist {
     int id;
     string name;
     char sex;
     string password;
+
+   public:
+    Receptionist() {}
+    Receptionist(int i, string n, char s, string p) {
+        id = i;
+        name = n;
+        sex = s;
+        password = p;
+    }
+
+    bool isLoginCorrect(int i, string p) {
+        return i == id && p == password;
+    }
 
     void display() {
         cout << "|=======================|\n";
@@ -67,41 +141,38 @@ struct Receptionist {
         cout << "Room Number: ";
         cin >> roomNum;
 
-        if (rooms[roomNum - 1].isReservered) {
+        if (rooms[roomNum - 1].isRoomReserved()) {
             cout << "Sorry this room is Occupied. Cancelling...\n";
             return;
         }
 
-        Customer customer;
+        int idNumber, phoneNumber;
+        char sex;
+        string name;
 
         cout << "Customer Id Number: ";
-        cin >> customer.idNumber;
+        cin >> idNumber;
         cin.ignore();
         cout << "Customer Name: ";
-        getline(cin, customer.name);
+        getline(cin, name);
 
         cout << "Customer Phone Number: ";
-        cin >> customer.phoneNumber;
+        cin >> phoneNumber;
 
         cout << "Customer Male or Female[m/f]: ";
-        cin >> customer.sex;
+        cin >> sex;
 
-        int reservationDay[3];
+        int date, month, year;
         cout << "Date: ";
-        cin >> reservationDay[0];
+        cin >> date;
 
         cout << "Month: ";
-        cin >> reservationDay[1];
+        cin >> month;
 
         cout << "Year: ";
-        cin >> reservationDay[2];
+        cin >> year;
 
-        rooms[roomNum - 1].isReservered = true;
-        rooms[roomNum - 1].reservation.reservationDay[0] = reservationDay[0];
-        rooms[roomNum - 1].reservation.reservationDay[1] = reservationDay[1];
-        rooms[roomNum - 1].reservation.reservationDay[2] = reservationDay[2];
-        rooms[roomNum - 1].reservation.receptionistId = id;
-        rooms[roomNum - 1].reservation.customer = customer;
+        rooms[roomNum - 1].setReservation(Reservation(date, month, year, id, Customer(idNumber, name, sex, phoneNumber)));
     }
 
     void checkout(Room rooms[]) {
@@ -109,38 +180,40 @@ struct Receptionist {
         cout << "Room Number: ";
         cin >> roomNum;
 
-        if (!rooms[roomNum - 1].isReservered) {
+        if (!rooms[roomNum - 1].isRoomReserved()) {
             cout << "Sorry this room is not Occupied. Cancelling...\n";
             return;
         }
-        int dateToday[3];
+        int date, month, year;
         cout << "Date: ";
-        cin >> dateToday[0];
+        cin >> date;
 
         cout << "Month: ";
-        cin >> dateToday[1];
+        cin >> month;
 
         cout << "Year: ";
-        cin >> dateToday[2];
+        cin >> year;
 
-        Reservation reservation = rooms[roomNum - 1].reservation;
-        float duration = (dateToday[2] - reservation.reservationDay[2]) * 365 +
-                         (dateToday[1] - reservation.reservationDay[1]) * 30 +
-                         (dateToday[0] - reservation.reservationDay[0]);
+        Reservation reservation = rooms[roomNum - 1].getReservation();
+        float duration = reservation.getDuration(date, month, year);
 
-        float total = duration * rooms[roomNum - 1].price;
+        float total = duration * rooms[roomNum - 1].getPrice();
 
         cout << "Your total is: " << total << endl;
 
-        Reservation emptyReservation;
-        rooms[roomNum - 1].isReservered = false;
-        rooms[roomNum - 1].reservation = emptyReservation;
+        rooms[roomNum - 1].clearReservation();
     }
 };
 
-struct Manager {
+class Manager {
     string name;
     string password;
+
+   public:
+    Manager() {}
+    Manager(string n, string p) {
+        name = n, password = p;
+    }
 
     bool login() {
         string inputPassword;
@@ -158,34 +231,31 @@ struct Manager {
     }
 };
 
-struct Hotel {
+class Hotel {
+   public:
     Manager manager;
     Room rooms[25];
     Receptionist receptions[3];
 
-    void init() {
+   public:
+    Hotel() {
         for (int i = 0; i < 25; i++) {
-            Reservation reservation;
-            rooms[i].number = i + 1;
-            rooms[i].floor = i / 5;
-            rooms[i].tier = (i / 5) + 1;
+            int beds;
 
             if (i < 10)
-                rooms[i].numberOfBeds = 2;
+                beds = 2;
             else if (i < 20)
-                rooms[i].numberOfBeds = 3;
+                beds = 3;
             else
-                rooms[i].numberOfBeds = 4;
+                beds = 4;
 
-            rooms[i].price = 299 + ((i / 5) + 1) * 100;
-            rooms[i].isReservered = false;
-            rooms[i].reservation = reservation;
+            rooms[i] = Room(i + 1, i / 5, (i / 5) + 1, 299 + ((i / 5) + 1) * 100, beds);
         };
 
-        receptions[0] = {1, "Sofia", 'f', "1234"};
-        receptions[1] = {2, "Mark", 'M', "1234"};
-        receptions[2] = {3, "Zoe", 'f', "1234"};
-        manager = {"Alex", "4321"};
+        receptions[0] = Receptionist(1, "Sofia", 'f', "1234");
+        receptions[1] = Receptionist(2, "Mark", 'M', "1234");
+        receptions[2] = Receptionist(3, "Zoe", 'f', "1234");
+        manager = Manager("Alex", "4321");
     }
 
     int receptionLogin() {
@@ -200,7 +270,7 @@ struct Hotel {
             cout << "password: ";
             cin >> inputPassword;
             for (int i = 0; i < 3; i++) {
-                if (inputId == receptions[i].id && inputPassword == receptions[i].password) return i;
+                if (receptions[i].isLoginCorrect(inputId, inputPassword)) return i;
             }
             cout << "Sorry, Incorrect id or password\n";
             tries++;
@@ -216,8 +286,7 @@ struct Hotel {
 };
 
 int main() {
-    Hotel hotel;
-    hotel.init();
+    Hotel hotel = Hotel();
 
     int role;
     while (1) {
@@ -242,8 +311,8 @@ int main() {
                 } else if (option == 3) {
                     bool isEmpty = true;
                     for (int i = 0; i < 25; i++) {
-                        if (hotel.rooms[i].isReservered) {
-                            hotel.rooms[i].reservation.customer.display();
+                        if (hotel.rooms[i].isRoomReserved()) {
+                            hotel.rooms[i].getReservation().getCustomer().display();
                             isEmpty = false;
                         }
                     }
@@ -263,7 +332,6 @@ int main() {
 
             int option;
             while (1) {
-                cout << "\nReception Id: " << loggedReceptionist.id << " .\n";
                 cout << "\t[1] Check Rooms.\n\t[2] Make Reservation.\n\t[3] Checkout.\n\t[4] Logout.\n\n\t==> ";
                 cin >> option;
                 if (option == 1) {
